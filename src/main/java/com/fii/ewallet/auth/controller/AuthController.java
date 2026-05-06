@@ -74,4 +74,14 @@ public class AuthController {
         return ResponseEntity.ok("Welcome to the e-wallet API!");
     }
 
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponse> refreshToken(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+
+        LoginResponse loginResponse = authService.refreshToken(refreshToken);
+
+        return ResponseEntity.ok(loginResponse);
+
+    }
+
 }

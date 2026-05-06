@@ -156,5 +156,21 @@ public class AuthServiceImpl implements AuthService {
         response.addCookie(cookie);
 
     }
+
+    @Override
+    public LoginResponse refreshToken(String refreshToken) {
+
+        RefreshToken rt = refreshTokenRepository.findByToken(refreshToken);
+
+        if (rt == null || !rt.getExpiresAt().isAfter(LocalDateTime.now()) || rt.getIsRevoked()) {
+            throw new UsernameNotFoundException("Invalid refresh token");
+        }
+
+        User user = rt.getUser();
+        String accessToken = jwtService.generateAccessToken(user);
+
+        return new LoginResponse(accessToken, "Token refreshed successfully", HttpStatus.OK.value(), LocalDateTime.now());
+
+    }
 }
 
