@@ -1,17 +1,29 @@
 package com.fii.ewallet.auth.service.impl;
 
+import com.fii.ewallet.auth.dto.LoginRequest;
+import com.fii.ewallet.auth.dto.LoginResponse;
 import com.fii.ewallet.auth.dto.RegisterRequest;
+import com.fii.ewallet.auth.repository.RefreshTokenRepository;
 import com.fii.ewallet.auth.repository.UserRepository;
 import com.fii.ewallet.auth.service.AuthService;
+import com.fii.ewallet.auth.service.RefreshTokenService;
 import com.fii.ewallet.email.EmailService;
 import com.fii.ewallet.email.repository.EmailVerificationRepository;
 import com.fii.ewallet.entity.EmailVerification;
+import com.fii.ewallet.entity.RefreshToken;
 import com.fii.ewallet.entity.User;
+import com.fii.ewallet.enums.Role;
 import com.fii.ewallet.exception.EmailAlreadyInUsedException;
 import com.fii.ewallet.exception.EmailIsNotVerified;
+import com.fii.ewallet.jwt.service.JwtService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -24,9 +36,13 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final EmailVerificationRepository emailVerificationRepository;
+    private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
-    public Boolean register(RegisterRequest registerRequest) {
+    @Transactional
+    public void register(RegisterRequest registerRequest) {
 
         User existing = userRepository.findByEmail(registerRequest.email()).orElse(null);
 
@@ -41,7 +57,8 @@ public class AuthServiceImpl implements AuthService {
         User user = new User();
         user.setEmail(registerRequest.email());
         user.setPassword(passwordEncoder.encode(registerRequest.password()));
-        user.isVerified();
+        user.setVerified(false);
+        user.setRole(String.valueOf(Role.USER));
 
         User createdUser = userRepository.save(user);
 
@@ -58,16 +75,11 @@ public class AuthServiceImpl implements AuthService {
 
         emailService.sendVerificationEmail(user.getEmail(), link);
 
-        if (createdUser != null) {
-            return true;
-        }
-
-        return false;
-
     }
 
     @Override
-    public Boolean verifyEmail(String token) {
+    @Transactional
+    public void verifyEmail(String token) {
 
         EmailVerification ev = emailVerificationRepository.findByToken(token).orElseThrow(
                 () -> new EmailIsNotVerified("Invalid token!")
@@ -79,11 +91,70 @@ public class AuthServiceImpl implements AuthService {
 
         User user = ev.getUser();
         user.setVerified(true);
-        User updatedUser = userRepository.save(user);
+        userRepository.save(user);
 
         emailVerificationRepository.delete(ev);
 
-        return updatedUser.isVerified();
+    }
+
+    @Override
+    public LoginResponse login(LoginRequest loginRequest, HttpServletResponse response) {
+
+        User user = userRepository.findByEmail(loginRequest.email()).orElseThrow(
+                () -> new UsernameNotFoundException("User not found")
+        );
+
+        if (!user.isVerified()) {
+            throw new EmailIsNotVerified("Email is not verified");
+        }
+
+        if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
+            throw new UsernameNotFoundException("Invalid credentials");
+        }
+
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = refreshTokenService.createRefreshToken(user);
+
+        Cookie cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // true in production (HTTPS)
+        cookie.setPath("/api/v1/auth");
+        cookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
+
+        response.addCookie(cookie);
+
+        LoginResponse responseLogin = new LoginResponse(
+                accessToken,
+                "Login successfully",
+                HttpStatus.OK.value(),
+                LocalDateTime.now()
+        );
+
+        return responseLogin;
+
+    }
+
+    @Override
+    public void logout(String refreshToken, HttpServletResponse response) {
+
+        if(refreshToken != null) {
+
+            RefreshToken rt = refreshTokenRepository.findByToken(refreshToken);
+
+            if(rt != null) {
+                rt.setIsRevoked(true);
+                refreshTokenRepository.save(rt);
+            }
+
+        }
+
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/api/v1/auth");
+        cookie.setMaxAge(0);
+
+        response.addCookie(cookie);
 
     }
 }
+

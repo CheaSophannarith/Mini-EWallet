@@ -10,7 +10,7 @@ public class PathConfig {
 
     @Bean(name = "publicPaths")
     public List<String> publicPaths() {
-        return List.of("/api/v1/auth/**");
+        return List.of("/api/v1/auth/**", "/error");
     }
 
 }
