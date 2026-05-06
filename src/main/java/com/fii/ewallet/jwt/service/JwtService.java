@@ -1,7 +1,7 @@
 package com.fii.ewallet.jwt.service;
 
 import com.fii.ewallet.entity.User;
-import com.fii.ewallet.jwt.JwtConfig;
+import com.fii.ewallet.config.JwtConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -27,7 +27,7 @@ public class JwtService {
                 .claim("name", user.getName())
                 .claim("role", user.getRole())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5))
                 .signWith(getSigningKey())
                 .compact();
     }

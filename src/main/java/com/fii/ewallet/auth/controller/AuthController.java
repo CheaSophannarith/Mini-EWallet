@@ -69,4 +69,9 @@ public class AuthController {
 
     }
 
+    @GetMapping("/welcome")
+    public ResponseEntity<String> welcome() {
+        return ResponseEntity.ok("Welcome to the e-wallet API!");
+    }
+
 }

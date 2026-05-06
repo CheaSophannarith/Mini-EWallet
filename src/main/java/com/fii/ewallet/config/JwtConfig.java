@@ -1,4 +1,4 @@
-package com.fii.ewallet.jwt;
+package com.fii.ewallet.config;
 
 import lombok.Getter;
 import lombok.Setter;

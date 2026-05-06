@@ -1,6 +1,6 @@
 package com.fii.ewallet.auth.service.impl;
 
-import com.fii.ewallet.auth.repository.UserRepository;
+import com.fii.ewallet.repository.UserRepository;
 import com.fii.ewallet.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

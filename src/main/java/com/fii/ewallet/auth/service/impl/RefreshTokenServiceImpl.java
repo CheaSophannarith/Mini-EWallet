@@ -1,7 +1,7 @@
 package com.fii.ewallet.auth.service.impl;
 
 import com.fii.ewallet.auth.service.RefreshTokenService;
-import com.fii.ewallet.auth.repository.RefreshTokenRepository;
+import com.fii.ewallet.repository.RefreshTokenRepository;
 import com.fii.ewallet.entity.RefreshToken;
 import com.fii.ewallet.entity.User;
 import lombok.RequiredArgsConstructor;
