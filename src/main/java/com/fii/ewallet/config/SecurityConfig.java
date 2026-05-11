@@ -28,7 +28,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(requests -> requests
-                .requestMatchers("/api/v1/auth/logout", "/api/v1/auth/welcome").authenticated()
+                .requestMatchers("/api/v1/auth/logout", "/api/v1/auth/welcome", "/api/v1/profile/upload-image").authenticated()
                 .requestMatchers("/api/v1/auth/**", "/error").permitAll()
                 .anyRequest().authenticated()
             )

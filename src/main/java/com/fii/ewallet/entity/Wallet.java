@@ -17,6 +17,9 @@ public class Wallet {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @Column(name = "wallet_id", nullable = false)
+    private String walletId;
+
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

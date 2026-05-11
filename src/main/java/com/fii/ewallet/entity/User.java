@@ -29,6 +29,9 @@ public class User {
     @Column(name = "is_verified")
     private boolean isVerified = false;
 
+    @Column(name = "image_key")
+    private String imageKey;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

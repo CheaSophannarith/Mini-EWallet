@@ -16,6 +16,7 @@ import com.fii.ewallet.enums.Role;
 import com.fii.ewallet.exception.EmailAlreadyInUsedException;
 import com.fii.ewallet.exception.EmailIsNotVerified;
 import com.fii.ewallet.jwt.service.JwtService;
+import com.fii.ewallet.wallet.service.WalletService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final WalletService walletService;
 
     @Override
     @Transactional
@@ -92,6 +94,8 @@ public class AuthServiceImpl implements AuthService {
         User user = ev.getUser();
         user.setVerified(true);
         userRepository.save(user);
+
+        walletService.createWallet(user);
 
         emailVerificationRepository.delete(ev);
 
