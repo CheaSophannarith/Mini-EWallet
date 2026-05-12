@@ -7,4 +7,6 @@ public interface WalletRepository extends CrudRepository<Wallet, Long> {
 
     Wallet findByUserId(Long userId);
 
+    Wallet findByWalletId(String walletId);
+
 }

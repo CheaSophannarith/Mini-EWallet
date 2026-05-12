@@ -1,7 +1,10 @@
 package com.fii.ewallet.wallet.service.impl;
 
 import com.fii.ewallet.entity.Wallet;
+import com.fii.ewallet.exception.WalletNotFoundException;
+import com.fii.ewallet.repository.UserRepository;
 import com.fii.ewallet.repository.WalletRepository;
+import com.fii.ewallet.wallet.dto.WalletResponse;
 import com.fii.ewallet.wallet.service.WalletService;
 import com.fii.ewallet.entity.User;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import java.math.BigDecimal;
 public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
+    private final UserRepository userRepository;
 
     @Override
     public void createWallet(User user) {
@@ -27,4 +31,24 @@ public class WalletServiceImpl implements WalletService {
 
     }
 
+    @Override
+    public WalletResponse getWallet(String email) {
+
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new RuntimeException("User not found")
+        );
+
+        Wallet wallet = walletRepository.findByUserId(user.getId());
+
+        if (wallet == null) {
+            throw new WalletNotFoundException("Wallet not found");
+        }
+
+        WalletResponse response = new WalletResponse(
+                wallet.getId(), wallet.getBalance(), wallet.getWalletId()
+        );
+
+        return response;
+
+    }
 }
