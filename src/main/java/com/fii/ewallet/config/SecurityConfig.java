@@ -28,8 +28,10 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(requests -> requests
-                .requestMatchers("/api/v1/auth/logout", "/api/v1/auth/welcome", "/api/v1/profile/upload-image", "/api/v1/wallet", "/api/v1/transactions/**").authenticated()
                 .requestMatchers("/api/v1/auth/**", "/error").permitAll()
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/agent/**").hasRole("AGENT")
+                .requestMatchers("/api/v1/profile/**", "/api/v1/wallet/**", "/api/v1/transactions/**").hasRole("USER")
                 .anyRequest().authenticated()
             )
             .formLogin(AbstractHttpConfigurer::disable)
