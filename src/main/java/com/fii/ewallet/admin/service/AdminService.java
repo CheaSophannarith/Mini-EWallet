@@ -1,7 +1,6 @@
 package com.fii.ewallet.admin.service;
 
-import com.fii.ewallet.admin.dto.TransactionListResponse;
-import com.fii.ewallet.admin.dto.TransactionResponse;
+import com.fii.ewallet.admin.dto.*;
 import org.springframework.data.domain.Page;
 
 public interface AdminService {
@@ -10,6 +9,10 @@ public interface AdminService {
 
     TransactionResponse getTransaction(Long id);
 
+    Page<UserListResponse> getUsers(int page, int size);
 
+    UserResponse getUser(Long id);
+
+    Page<UserTransactionListResponse> getUserTransactionById(Long id, int page, int size);
 
 }

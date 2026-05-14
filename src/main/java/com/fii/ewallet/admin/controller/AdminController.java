@@ -1,7 +1,6 @@
 package com.fii.ewallet.admin.controller;
 
-import com.fii.ewallet.admin.dto.TransactionListResponse;
-import com.fii.ewallet.admin.dto.TransactionResponse;
+import com.fii.ewallet.admin.dto.*;
 import com.fii.ewallet.admin.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +31,31 @@ public class AdminController {
 
             return ResponseEntity.ok(response);
 
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<Page<UserListResponse>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(adminService.getUsers(page, size));
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserResponse> getUserById(
+            @PathVariable Long id
+    ){
+        UserResponse response = adminService.getUser(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/users/{id}/transactions")
+    public ResponseEntity<Page<UserTransactionListResponse>> getUserTransactionsById(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(adminService.getUserTransactionById(id, page, size));
     }
 
 }

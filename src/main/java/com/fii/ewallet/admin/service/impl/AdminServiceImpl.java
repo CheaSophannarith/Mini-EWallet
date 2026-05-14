@@ -1,10 +1,14 @@
 package com.fii.ewallet.admin.service.impl;
 
-import com.fii.ewallet.admin.dto.TransactionListResponse;
-import com.fii.ewallet.admin.dto.TransactionResponse;
+import com.fii.ewallet.admin.dto.*;
 import com.fii.ewallet.admin.service.AdminService;
 import com.fii.ewallet.entity.Transaction;
+import com.fii.ewallet.entity.User;
+import com.fii.ewallet.entity.Wallet;
+import com.fii.ewallet.enums.Role;
+import com.fii.ewallet.enums.TransactionType;
 import com.fii.ewallet.repository.TransactionRepository;
+import com.fii.ewallet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,12 +16,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
     private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -52,5 +58,68 @@ public class AdminServiceImpl implements AdminService {
                 transaction.getCreatedAt()
         );
 
+    }
+
+    @Override
+    public Page<UserListResponse> getUsers(int page, int size) {
+
+        List<String> excludedRoles = List.of(Role.ADMIN.name(), Role.AGENT.name());
+        Page<User> users = userRepository.findAllByRoleNotInOrderByIdDesc(
+            excludedRoles,
+            PageRequest.of(page, size)
+        );
+
+        Page<UserListResponse> userList = users.map(user -> {
+            Wallet wallet = user.getWallet();
+            String walletId = wallet != null ? wallet.getWalletId() : null;
+
+            return new UserListResponse(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    walletId,
+                    user.getRole()
+            );
+        });
+
+        return userList;
+
+    }
+
+    @Override
+    public UserResponse getUser(Long id) {
+
+        User user = userRepository.findById(id).orElseThrow(
+                () -> new RuntimeException("User not found")
+        );
+
+        return new UserResponse(
+                user.getName(),
+                user.getEmail(),
+                user.getWallet().getWalletId(),
+                user.getRole()
+        );
+
+    }
+
+    @Override
+    public Page<UserTransactionListResponse> getUserTransactionById(Long id, int page, int size) {
+
+        Page<Transaction> userTransactions = transactionRepository
+                .findBySenderIdOrReceiverIdOrderByCreatedAtDesc(id, id, PageRequest.of(page, size));
+
+        return userTransactions.map(tx -> {
+            boolean isOut = tx.getSender().getId().equals(id);
+            TransactionType type = isOut ? TransactionType.OUT : TransactionType.IN;
+            String counterpartName = isOut ? tx.getReceiver().getName() : tx.getSender().getName();
+
+            return new UserTransactionListResponse(
+                    tx.getId(),
+                    BigDecimal.valueOf(tx.getAmount()),
+                    counterpartName,
+                    type,
+                    tx.getCreatedAt().toLocalDate()
+            );
+        });
     }
 }

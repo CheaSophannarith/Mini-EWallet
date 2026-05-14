@@ -1,5 +1,6 @@
 package com.fii.ewallet.repository;
 
+import com.fii.ewallet.admin.dto.UserTransactionListResponse;
 import com.fii.ewallet.entity.Transaction;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,4 +16,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findBySenderIdOrReceiverIdOrderByCreatedAtDesc(Long senderId, Long receiverId);
 
     Page<Transaction> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<Transaction> findBySenderIdOrReceiverIdOrderByCreatedAtDesc(Long senderId, Long receiverId, Pageable pageable);
+
 }
