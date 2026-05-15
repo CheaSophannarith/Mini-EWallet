@@ -7,11 +7,14 @@ import com.fii.ewallet.entity.User;
 import com.fii.ewallet.entity.Wallet;
 import com.fii.ewallet.enums.Role;
 import com.fii.ewallet.enums.TransactionType;
+import com.fii.ewallet.exception.EmailAlreadyInUsedException;
+import com.fii.ewallet.exception.EmailIsNotVerified;
 import com.fii.ewallet.repository.TransactionRepository;
 import com.fii.ewallet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ public class AdminServiceImpl implements AdminService {
 
     private final TransactionRepository transactionRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -121,5 +125,52 @@ public class AdminServiceImpl implements AdminService {
                     tx.getCreatedAt().toLocalDate()
             );
         });
+    }
+
+    @Override
+    public void createAgentUser(AgentUserRequest request) {
+
+        User existing = userRepository.findByEmail(request.email()).orElse(null);
+
+        if (existing != null && existing.isVerified()) {
+            throw new EmailAlreadyInUsedException("Email already taken");
+        }
+
+        if (existing != null && !existing.isVerified()) {
+            throw new EmailIsNotVerified("Email is not verified");
+        }
+
+        User createdAgent = new User();
+        createdAgent.setName(request.name());
+        createdAgent.setEmail(request.email());
+        createdAgent.setPassword(passwordEncoder.encode(request.password()));
+        createdAgent.setVerified(true);
+        createdAgent.setRole(Role.AGENT.name());
+
+        userRepository.save(createdAgent);
+
+    }
+
+    @Override
+    public Page<AgentUserResponse> getAgents(int page, int size) {
+
+        List<String> excludedRoles = List.of(Role.ADMIN.name(), Role.USER.name());
+        Page<User> users = userRepository.findAllByRoleNotInOrderByIdDesc(
+                excludedRoles,
+                PageRequest.of(page, size)
+        );
+
+        Page<AgentUserResponse> agentUserResponses = users
+                .map(user -> {
+                    return new AgentUserResponse(
+                            user.getName(),
+                            user.getEmail(),
+                            user.getRole(),
+                            user.getCreatedAt()
+                    );
+                });
+
+        return agentUserResponses;
+
     }
 }

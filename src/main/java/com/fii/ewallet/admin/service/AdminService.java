@@ -15,4 +15,8 @@ public interface AdminService {
 
     Page<UserTransactionListResponse> getUserTransactionById(Long id, int page, int size);
 
+    Page<AgentUserResponse> getAgents(int page, int size);
+
+    void createAgentUser(AgentUserRequest request);
+
 }

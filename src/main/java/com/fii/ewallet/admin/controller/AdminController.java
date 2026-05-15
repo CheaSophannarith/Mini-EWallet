@@ -2,10 +2,15 @@ package com.fii.ewallet.admin.controller;
 
 import com.fii.ewallet.admin.dto.*;
 import com.fii.ewallet.admin.service.AdminService;
+import com.fii.ewallet.common.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -56,6 +61,28 @@ public class AdminController {
             @RequestParam(defaultValue = "10") int size
     ) {
         return ResponseEntity.ok(adminService.getUserTransactionById(id, page, size));
+    }
+
+    @PostMapping("/agents")
+    public ResponseEntity<ApiResponse> createAgentUser(@Valid @RequestBody AgentUserRequest request) {
+
+        adminService.createAgentUser(request);
+
+        ApiResponse response = new ApiResponse(
+                "Agent registered successfully",
+                HttpStatus.CREATED.value(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.status(201).body(response);
+
+    }
+
+    @GetMapping("/agents")
+    public ResponseEntity<Page<AgentUserResponse>> getAllAgentUsers(@RequestParam(defaultValue = "0") int page,
+                                                                    @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.status(201).body(adminService.getAgents(page, size));
+
     }
 
 }
