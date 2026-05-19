@@ -1,8 +1,6 @@
 package com.fii.ewallet.auth.controller;
 
-import com.fii.ewallet.auth.dto.LoginRequest;
-import com.fii.ewallet.auth.dto.LoginResponse;
-import com.fii.ewallet.auth.dto.RegisterRequest;
+import com.fii.ewallet.auth.dto.*;
 import com.fii.ewallet.auth.service.AuthService;
 import com.fii.ewallet.common.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,6 +8,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -81,6 +81,37 @@ public class AuthController {
         LoginResponse loginResponse = authService.refreshToken(refreshToken);
 
         return ResponseEntity.ok(loginResponse);
+
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse> changePassword(@RequestBody ChangePasswordRequest request) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        String email = auth.getName();
+
+        authService.changePassword(email, request);
+
+        return ResponseEntity.ok(new ApiResponse("Password changed successfully", HttpStatus.OK.value(), LocalDateTime.now()));
+
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+
+        authService.forgotPassword(request.email());
+
+        return ResponseEntity.ok(new ApiResponse("Password reset link sent to your email", HttpStatus.OK.value(), LocalDateTime.now()));
+
+    }
+
+    @PostMapping("reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(@RequestParam("token") String token, @RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(token, request);
+
+        return ResponseEntity.ok(new ApiResponse("Password reset successfully", HttpStatus.OK.value(), LocalDateTime.now()));
 
     }
 

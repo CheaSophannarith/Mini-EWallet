@@ -85,4 +85,33 @@ public class AdminController {
 
     }
 
+    @PostMapping("/agents/{id}/wallet/balance")
+    public ResponseEntity<ApiResponse> addAmountToAgentWallet(
+            @PathVariable Long id,
+            @Valid @RequestBody AddBalanceToAgentWalletRequest request
+    ){
+
+        adminService.addBalanceToAgentWallet(id, request);
+
+        ApiResponse response = new ApiResponse(
+                "Amount added successfully",
+                HttpStatus.OK.value(),
+                LocalDateTime.now()
+        );
+
+        return ResponseEntity.ok(response);
+
+    }
+
+    @GetMapping("/agents/{id}/transactions")
+    public ResponseEntity<Page<AgentTransactionListResponse>> getAgentTransactions(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        Page<AgentTransactionListResponse> agentTransactions = adminService.getAgentTransactions(id, page, size);
+
+        return ResponseEntity.ok(agentTransactions);
+    }
+
 }

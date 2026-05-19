@@ -13,6 +13,8 @@ public interface UserRepository extends CrudRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findFirstByRole(String role);
+
     Page<User> findAllByOrderByIdDesc(Pageable pageable);
 
     Page<User> findAllByRoleNotInOrderByIdDesc(List<String> roles, Pageable pageable);

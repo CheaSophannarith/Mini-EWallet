@@ -1,8 +1,6 @@
 package com.fii.ewallet.auth.service.impl;
 
-import com.fii.ewallet.auth.dto.LoginRequest;
-import com.fii.ewallet.auth.dto.LoginResponse;
-import com.fii.ewallet.auth.dto.RegisterRequest;
+import com.fii.ewallet.auth.dto.*;
 import com.fii.ewallet.repository.RefreshTokenRepository;
 import com.fii.ewallet.repository.UserRepository;
 import com.fii.ewallet.auth.service.AuthService;
@@ -175,6 +173,84 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtService.generateAccessToken(user);
 
         return new LoginResponse(accessToken, "Token refreshed successfully", HttpStatus.OK.value(), LocalDateTime.now());
+
+    }
+
+    @Override
+    public void changePassword(String email, ChangePasswordRequest request) {
+
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new UsernameNotFoundException("User not found")
+        );
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new UsernameNotFoundException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new UsernameNotFoundException("New password cannot be the same as the current password");
+        }
+
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new UsernameNotFoundException("New password and confirm password do not match");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+
+        userRepository.save(user);
+
+    }
+
+    @Override
+    @Transactional
+    public void forgotPassword(String email) {
+
+        User existingUser = userRepository.findByEmail(email).orElseThrow(
+                () -> new UsernameNotFoundException("User not found")
+        );
+
+        if (!existingUser.isVerified()) {
+            throw new EmailIsNotVerified("Email is not verified");
+        }
+
+        emailVerificationRepository.deleteByUser(existingUser);
+
+        String token = UUID.randomUUID().toString();
+
+        EmailVerification ev = new EmailVerification();
+        ev.setToken(token);
+        ev.setUser(existingUser);
+        ev.setExpiryDate(LocalDateTime.now().plusMinutes(15));
+
+        emailVerificationRepository.save(ev);
+
+        String link = "http://localhost:8080/api/v1/auth/reset-password?token=" + token;
+
+        emailService.sendVerificationEmail(existingUser.getEmail(), link);
+
+    }
+
+    @Override
+    public void resetPassword(String token, ResetPasswordRequest request) {
+
+        EmailVerification ev = emailVerificationRepository.findByToken(token).orElseThrow(
+                () -> new EmailIsNotVerified("Invalid token!")
+        );
+
+        if (ev.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new EmailIsNotVerified("Token has expired!");
+        }
+
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            throw new EmailIsNotVerified("New password and confirm password do not match");
+        }
+
+        User user = ev.getUser();
+
+        if (user != null) {
+            user.setPassword(passwordEncoder.encode(request.newPassword()));
+            userRepository.save(user);
+        }
 
     }
 }

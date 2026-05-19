@@ -3,6 +3,7 @@ package com.fii.ewallet.admin.dto;
 import java.time.LocalDateTime;
 
 public record AgentUserResponse(
+        Long id,
         String name,
         String email,
         String role,

@@ -19,4 +19,8 @@ public interface AdminService {
 
     void createAgentUser(AgentUserRequest request);
 
+    void addBalanceToAgentWallet(Long agentId, AddBalanceToAgentWalletRequest request);
+
+    Page<AgentTransactionListResponse> getAgentTransactions(Long agentId, int page, int size);
+
 }

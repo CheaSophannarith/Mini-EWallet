@@ -28,6 +28,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(requests -> requests
+                .requestMatchers("/api/v1/auth/change-password").authenticated()
                 .requestMatchers("/api/v1/auth/**", "/error").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/agent/**").hasRole("AGENT")

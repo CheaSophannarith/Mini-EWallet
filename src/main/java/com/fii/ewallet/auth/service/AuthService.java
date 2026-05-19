@@ -1,8 +1,6 @@
 package com.fii.ewallet.auth.service;
 
-import com.fii.ewallet.auth.dto.LoginRequest;
-import com.fii.ewallet.auth.dto.LoginResponse;
-import com.fii.ewallet.auth.dto.RegisterRequest;
+import com.fii.ewallet.auth.dto.*;
 import jakarta.servlet.http.HttpServletResponse;
 
 public interface AuthService {
@@ -16,5 +14,11 @@ public interface AuthService {
     void logout(String refreshToken, HttpServletResponse response);
 
     LoginResponse refreshToken(String refreshToken);
+
+    void changePassword(String email, ChangePasswordRequest request);
+
+    void forgotPassword(String email);
+
+    void resetPassword(String token, ResetPasswordRequest request);
 
 }

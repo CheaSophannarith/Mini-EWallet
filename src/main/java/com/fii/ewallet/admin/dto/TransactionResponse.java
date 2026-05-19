@@ -1,5 +1,7 @@
 package com.fii.ewallet.admin.dto;
 
+import com.fii.ewallet.enums.TransactionType;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
