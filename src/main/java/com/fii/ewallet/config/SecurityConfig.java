@@ -29,7 +29,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(requests -> requests
                 .requestMatchers("/api/v1/auth/change-password").authenticated()
-                .requestMatchers("/api/v1/auth/**", "/error").permitAll()
+                .requestMatchers("/api/v1/auth/**", "/error", "/api/v1/data/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/agent/**").hasRole("AGENT")
                 .requestMatchers("/api/v1/profile/**", "/api/v1/wallet/**", "/api/v1/transactions/**").hasRole("USER")
