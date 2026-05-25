@@ -1,6 +1,7 @@
 package com.fii.ewallet.wallet.service.impl;
 
 import com.fii.ewallet.entity.Wallet;
+import com.fii.ewallet.exception.ResourceNotFoundException;
 import com.fii.ewallet.exception.WalletNotFoundException;
 import com.fii.ewallet.repository.UserRepository;
 import com.fii.ewallet.repository.WalletRepository;
@@ -35,7 +36,7 @@ public class WalletServiceImpl implements WalletService {
     public WalletResponse getWallet(String email) {
 
         User user = userRepository.findByEmail(email).orElseThrow(
-                () -> new RuntimeException("User not found")
+            () -> new ResourceNotFoundException("User not found")
         );
 
         Wallet wallet = walletRepository.findByUserId(user.getId());

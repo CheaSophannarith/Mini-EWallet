@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +40,9 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final WalletService walletService;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String baseUrl;
 
     @Override
     @Transactional
@@ -72,7 +76,7 @@ public class AuthServiceImpl implements AuthService {
 
         emailVerificationRepository.save(ev);
 
-        String link = "http://localhost:8080/api/v1/auth/verify?token=" + token;
+        String link = baseUrl + "/api/v1/auth/verify?token=" + token;
 
         emailService.sendVerificationEmail(user.getEmail(), link);
 
@@ -224,7 +228,7 @@ public class AuthServiceImpl implements AuthService {
 
         emailVerificationRepository.save(ev);
 
-        String link = "http://localhost:8080/api/v1/auth/reset-password?token=" + token;
+        String link = baseUrl + "/api/v1/auth/reset-password?token=" + token;
 
         emailService.sendVerificationEmail(existingUser.getEmail(), link);
 

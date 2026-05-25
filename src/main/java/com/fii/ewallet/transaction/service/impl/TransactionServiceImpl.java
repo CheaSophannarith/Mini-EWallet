@@ -5,6 +5,7 @@ import com.fii.ewallet.entity.User;
 import com.fii.ewallet.entity.Wallet;
 import com.fii.ewallet.enums.Status;
 import com.fii.ewallet.exception.InsufficientBalanceException;
+import com.fii.ewallet.exception.ResourceNotFoundException;
 import com.fii.ewallet.exception.TransactionLimitExceededException;
 import com.fii.ewallet.exception.WalletNotFoundException;
 import com.fii.ewallet.repository.TransactionRepository;
@@ -18,6 +19,7 @@ import com.fii.ewallet.transaction.dto.TransactionResponse;
 import com.fii.ewallet.transaction.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,7 +90,7 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = new Transaction();
         transaction.setSender(sender);
         transaction.setReceiver(receiverWallet.getUser());
-        transaction.setAmount(amount.doubleValue());
+        transaction.setAmount(amount);
         transaction.setStatus(Status.SUCCESS);
         transaction.setCreatedAt(LocalDateTime.now());
 
@@ -117,7 +119,7 @@ public class TransactionServiceImpl implements TransactionService {
                     String counterpartName = isOut ? tx.getReceiver().getName() : tx.getSender().getName();
                     return new TransactionListResponse(
                             tx.getId(),
-                            BigDecimal.valueOf(tx.getAmount()),
+                            tx.getAmount(),
                             counterpartName,
                             type
                     );
@@ -130,15 +132,15 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse getTransaction(Long transactionId, String email) {
         
         User user = userRepository.findByEmail(email).orElseThrow(
-                () -> new RuntimeException("User not found")
+                () -> new ResourceNotFoundException("User not found")
         );
         
         Transaction transaction = transactionRepository.findById(transactionId).orElseThrow(
-                () -> new RuntimeException("Transaction not found")
+                () -> new ResourceNotFoundException("Transaction not found")
         );
         
         if (!transaction.getSender().getId().equals(user.getId()) && !transaction.getReceiver().getId().equals(user.getId())) {
-            throw new RuntimeException("You are not authorized to view this transaction");
+            throw new AccessDeniedException("You are not authorized to view this transaction");
         }
 
         TransactionResponse response = getTransactionResponse(transaction, user);

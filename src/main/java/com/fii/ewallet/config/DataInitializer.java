@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 
@@ -20,14 +21,30 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final WalletRepository walletRepository;
 
+    @Value("${app.bootstrap.enabled:true}")
+    private boolean bootstrapEnabled;
+
+    @Value("${app.bootstrap.admin.email:admin@ewallet.com}")
+    private String adminEmail;
+
+    @Value("${app.bootstrap.admin.password:Admin@12345}")
+    private String adminPassword;
+
+    @Value("${app.bootstrap.admin.balance:99999999}")
+    private long adminBalance;
+
     @Override
     public void run(String... args) {
-        User admin = userRepository.findByEmail("admin@ewallet.com").orElse(null);
+        if (!bootstrapEnabled) {
+            return;
+        }
+
+        User admin = userRepository.findByEmail(adminEmail).orElse(null);
         if (admin == null) {
             admin = new User();
             admin.setName("Admin");
-            admin.setEmail("admin@ewallet.com");
-            admin.setPassword(passwordEncoder.encode("Admin@12345"));
+            admin.setEmail(adminEmail);
+            admin.setPassword(passwordEncoder.encode(adminPassword));
             admin.setRole(Role.ADMIN.name());
             admin.setVerified(true);
             admin = userRepository.save(admin);
@@ -38,7 +55,7 @@ public class DataInitializer implements CommandLineRunner {
             Wallet wallet = new Wallet();
             wallet.setUser(admin);
             wallet.setWalletId(String.format("%010d", admin.getId()));
-            wallet.setBalance(BigDecimal.valueOf(99_999_999));
+            wallet.setBalance(BigDecimal.valueOf(adminBalance));
             walletRepository.save(wallet);
         }
     }

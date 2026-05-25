@@ -69,7 +69,7 @@ public class AgentServiceImpl implements AgentService {
         Transaction transaction = new Transaction();
         transaction.setSender(agent);
         transaction.setReceiver(userWallet.getUser());
-        transaction.setAmount(addMoneyToUserRequest.amount().doubleValue());
+        transaction.setAmount(addMoneyToUserRequest.amount());
 
         transactionRepository.save(transaction);
 

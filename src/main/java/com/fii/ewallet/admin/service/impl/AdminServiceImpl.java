@@ -10,6 +10,7 @@ import com.fii.ewallet.enums.TransactionType;
 import com.fii.ewallet.exception.EmailAlreadyInUsedException;
 import com.fii.ewallet.exception.EmailIsNotVerified;
 import com.fii.ewallet.exception.InsufficientBalanceException;
+import com.fii.ewallet.exception.ResourceNotFoundException;
 import com.fii.ewallet.exception.TransactionLimitExceededException;
 import com.fii.ewallet.repository.TransactionRepository;
 import com.fii.ewallet.repository.UserRepository;
@@ -42,7 +43,7 @@ public class AdminServiceImpl implements AdminService {
                 .findAllByOrderByCreatedAtDesc(PageRequest.of(page, size))
                 .map(tx -> new TransactionListResponse(
                         tx.getId(),
-                        BigDecimal.valueOf(tx.getAmount()),
+                    tx.getAmount(),
                         String.valueOf(tx.getSender().getId()),
                         String.valueOf(tx.getReceiver().getId()),
                         tx.getSender().getName(),
@@ -55,11 +56,11 @@ public class AdminServiceImpl implements AdminService {
     public TransactionResponse getTransaction(Long id) {
 
         Transaction transaction = transactionRepository.findById(id).orElseThrow(
-                () -> new RuntimeException("Transaction not found")
+            () -> new ResourceNotFoundException("Transaction not found")
         );
 
         return new TransactionResponse(
-                BigDecimal.valueOf(transaction.getId()),
+            transaction.getAmount(),
                 String.valueOf(transaction.getSender().getId()),
                 String.valueOf(transaction.getReceiver().getId()),
                 transaction.getSender().getName(),
@@ -99,7 +100,7 @@ public class AdminServiceImpl implements AdminService {
     public UserResponse getUser(Long id) {
 
         User user = userRepository.findById(id).orElseThrow(
-                () -> new RuntimeException("User not found")
+            () -> new ResourceNotFoundException("User not found")
         );
 
         return new UserResponse(
@@ -124,7 +125,7 @@ public class AdminServiceImpl implements AdminService {
 
             return new UserTransactionListResponse(
                     tx.getId(),
-                    BigDecimal.valueOf(tx.getAmount()),
+                    tx.getAmount(),
                     counterpartName,
                     type,
                     tx.getCreatedAt().toLocalDate()
@@ -192,25 +193,25 @@ public class AdminServiceImpl implements AdminService {
     public void addBalanceToAgentWallet(Long agentId, AddBalanceToAgentWalletRequest request) {
 
         User agent = userRepository.findById(agentId).orElseThrow(
-                () -> new RuntimeException("Agent not found")
+            () -> new ResourceNotFoundException("Agent not found")
         );
 
         if (!agent.getRole().equals(Role.AGENT.name())) {
-            throw new RuntimeException("User is not an agent");
+            throw new IllegalArgumentException("User is not an agent");
         }
 
         User admin = userRepository.findFirstByRole(Role.ADMIN.name()).orElseThrow(
-                () -> new RuntimeException("Admin not found")
+            () -> new ResourceNotFoundException("Admin not found")
         );
 
         Wallet adminWallet = walletRepository.findByUserId(admin.getId());
         if (adminWallet == null) {
-            throw new RuntimeException("Admin wallet not found");
+            throw new ResourceNotFoundException("Admin wallet not found");
         }
 
         Wallet wallet = walletRepository.findByUserId(agent.getId());
         if (wallet == null) {
-            throw new RuntimeException("Agent wallet not found");
+            throw new ResourceNotFoundException("Agent wallet not found");
         }
 
         LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
@@ -234,7 +235,7 @@ public class AdminServiceImpl implements AdminService {
         Transaction transaction = new Transaction();
         transaction.setSender(admin);
         transaction.setReceiver(agent);
-        transaction.setAmount(amount.doubleValue());
+        transaction.setAmount(amount);
         transaction.setStatus(com.fii.ewallet.enums.Status.SUCCESS);
         transaction.setCreatedAt(LocalDateTime.now());
         transactionRepository.save(transaction);
@@ -245,12 +246,12 @@ public class AdminServiceImpl implements AdminService {
     public Page<AgentTransactionListResponse> getAgentTransactions(Long agentId, int page, int size) {
 
         User agent = userRepository.findById(agentId).orElseThrow(
-                () -> new RuntimeException("Agent not found")
+                () -> new ResourceNotFoundException("Agent not found")
         );
 
         if (!agent.getRole().equals(Role.AGENT.name())) {
 
-            throw new RuntimeException("User is not an agent");
+            throw new IllegalArgumentException("User is not an agent");
 
         }
 
@@ -262,7 +263,7 @@ public class AdminServiceImpl implements AdminService {
             String counterpartName = isOut ? at.getReceiver().getName() : at.getSender().getName();
             return new AgentTransactionListResponse(
                     at.getId(),
-                    BigDecimal.valueOf(at.getAmount()),
+                    at.getAmount(),
                     counterpartName,
                     type,
                     at.getCreatedAt().toLocalDate()
