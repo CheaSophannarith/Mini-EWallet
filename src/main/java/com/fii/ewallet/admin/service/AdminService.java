@@ -23,4 +23,8 @@ public interface AdminService {
 
     Page<AgentTransactionListResponse> getAgentTransactions(Long agentId, int page, int size);
 
+    AdminDashboardSummaryResponse getDashboardSummary(String range);
+
+    AdminDashboardSeriesResponse getTransactionsSeries(String range, String bucket);
+
 }

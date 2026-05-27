@@ -6,12 +6,14 @@ import com.fii.ewallet.entity.Transaction;
 import com.fii.ewallet.entity.User;
 import com.fii.ewallet.entity.Wallet;
 import com.fii.ewallet.enums.Role;
+import com.fii.ewallet.enums.Status;
 import com.fii.ewallet.enums.TransactionType;
 import com.fii.ewallet.exception.EmailAlreadyInUsedException;
 import com.fii.ewallet.exception.EmailIsNotVerified;
 import com.fii.ewallet.exception.InsufficientBalanceException;
 import com.fii.ewallet.exception.ResourceNotFoundException;
 import com.fii.ewallet.exception.TransactionLimitExceededException;
+import com.fii.ewallet.repository.TimeBucketAggregate;
 import com.fii.ewallet.repository.TransactionRepository;
 import com.fii.ewallet.repository.UserRepository;
 import com.fii.ewallet.repository.WalletRepository;
@@ -23,8 +25,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -270,5 +274,102 @@ public class AdminServiceImpl implements AdminService {
             );
         });
 
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminDashboardSummaryResponse getDashboardSummary(String range) {
+
+        DateRange dateRange = resolveRange(range);
+
+        long totalUsers = userRepository.countByRole(Role.USER.name());
+        long totalAgents = userRepository.countByRole(Role.AGENT.name());
+        long newUsers = userRepository.countByRoleAndCreatedAtBetween(
+                Role.USER.name(),
+                dateRange.start,
+                dateRange.end
+        );
+        long newAgents = userRepository.countByRoleAndCreatedAtBetween(
+                Role.AGENT.name(),
+                dateRange.start,
+                dateRange.end
+        );
+
+        long transactionsCount = transactionRepository.countByCreatedAtBetween(
+                dateRange.start,
+                dateRange.end
+        );
+        long failedTransactions = transactionRepository.countByStatusAndCreatedAtBetween(
+                Status.FAILED,
+                dateRange.start,
+                dateRange.end
+        );
+        BigDecimal totalVolume = transactionRepository.sumAmountByCreatedAtBetween(
+                dateRange.start,
+                dateRange.end
+        );
+
+        return new AdminDashboardSummaryResponse(
+                totalUsers,
+                totalAgents,
+                newUsers,
+                newAgents,
+                transactionsCount,
+                failedTransactions,
+                totalVolume
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminDashboardSeriesResponse getTransactionsSeries(String range, String bucket) {
+
+        DateRange dateRange = resolveRange(range);
+
+        List<TimeBucketAggregate> aggregates = resolveAdminBucket(bucket, dateRange);
+
+        List<AdminDashboardSeriesPoint> points = aggregates.stream()
+                .map(item -> new AdminDashboardSeriesPoint(
+                        item.getBucket(),
+                        item.getCount() == null ? 0L : item.getCount(),
+                        item.getVolume() == null ? BigDecimal.ZERO : item.getVolume()
+                ))
+                .toList();
+
+        return new AdminDashboardSeriesResponse(bucket.toLowerCase(Locale.ROOT), points);
+    }
+
+    private DateRange resolveRange(String range) {
+        String normalized = range == null ? "" : range.toLowerCase(Locale.ROOT).trim();
+        LocalDateTime end = LocalDateTime.now();
+
+        return switch (normalized) {
+            case "today" -> new DateRange(LocalDate.now().atStartOfDay(), end);
+            case "7d" -> new DateRange(end.minusDays(7), end);
+            case "30d" -> new DateRange(end.minusDays(30), end);
+            default -> throw new IllegalArgumentException("Invalid range. Use today, 7d, or 30d.");
+        };
+    }
+
+    private List<TimeBucketAggregate> resolveAdminBucket(String bucket, DateRange range) {
+        String normalized = bucket == null ? "" : bucket.toLowerCase(Locale.ROOT).trim();
+
+        return switch (normalized) {
+            case "day" -> transactionRepository.aggregateAllByDay(range.start, range.end);
+            case "week" -> transactionRepository.aggregateAllByWeek(range.start, range.end);
+            case "month" -> transactionRepository.aggregateAllByMonth(range.start, range.end);
+            case "year" -> transactionRepository.aggregateAllByYear(range.start, range.end);
+            default -> throw new IllegalArgumentException("Invalid bucket. Use day, week, month, or year.");
+        };
+    }
+
+    private static class DateRange {
+        private final LocalDateTime start;
+        private final LocalDateTime end;
+
+        private DateRange(LocalDateTime start, LocalDateTime end) {
+            this.start = start;
+            this.end = end;
+        }
     }
 }

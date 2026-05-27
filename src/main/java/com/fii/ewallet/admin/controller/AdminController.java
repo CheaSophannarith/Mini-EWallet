@@ -114,4 +114,19 @@ public class AdminController {
         return ResponseEntity.ok(agentTransactions);
     }
 
+        @GetMapping("/dashboard/summary")
+        public ResponseEntity<AdminDashboardSummaryResponse> getDashboardSummary(
+                        @RequestParam(defaultValue = "7d") String range
+        ) {
+                return ResponseEntity.ok(adminService.getDashboardSummary(range));
+        }
+
+        @GetMapping("/dashboard/transactions-series")
+        public ResponseEntity<AdminDashboardSeriesResponse> getTransactionsSeries(
+                        @RequestParam(defaultValue = "7d") String range,
+                        @RequestParam(defaultValue = "day") String bucket
+        ) {
+                return ResponseEntity.ok(adminService.getTransactionsSeries(range, bucket));
+        }
+
 }
