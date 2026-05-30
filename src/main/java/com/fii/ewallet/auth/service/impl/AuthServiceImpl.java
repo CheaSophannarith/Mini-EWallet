@@ -134,7 +134,10 @@ public class AuthServiceImpl implements AuthService {
                 accessToken,
                 "Login successfully",
                 HttpStatus.OK.value(),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                user.getRole(),
+                user.getName(),
+                user.getEmail()
         );
 
         return responseLogin;
@@ -176,7 +179,7 @@ public class AuthServiceImpl implements AuthService {
         User user = rt.getUser();
         String accessToken = jwtService.generateAccessToken(user);
 
-        return new LoginResponse(accessToken, "Token refreshed successfully", HttpStatus.OK.value(), LocalDateTime.now());
+        return new LoginResponse(accessToken, "Token refreshed successfully", HttpStatus.OK.value(), LocalDateTime.now(), user.getRole(), user.getName(), user.getEmail());
 
     }
 
